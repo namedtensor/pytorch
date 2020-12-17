@@ -839,12 +839,17 @@ class SimpleIREvaluator : public CodeGen, public IRVisitor {
       } else if (inp_dtype == ScalarType::Half) {
         throw unsupported_dtype(); // TODO
       }
-    } else if (ty == ScalarType::Float) {
-      visit_intrinsics_helper<float, float>(v);
-    } else if (ty == ScalarType::Double) {
-      visit_intrinsics_helper<double, double>(v);
     } else {
-      throw unsupported_dtype();
+      switch (ty) {
+#define TYPE_CASE(Type, Name)               \
+  case ScalarType::Name:                    \
+    visit_intrinsics_helper<Type, Type>(v); \
+    break;
+        AT_FORALL_SCALAR_TYPES(TYPE_CASE);
+#undef TYPE_CASE
+        default:
+          throw unsupported_dtype();
+      }
     }
   }
 
@@ -930,8 +935,14 @@ class SimpleIREvaluator : public CodeGen, public IRVisitor {
         return std::tanh(v);
       case kExp:
         return std::exp(v);
-      case kFabs:
-        return std::fabs(v);
+      case kAbs: {
+        // internal tool complains about calling `abs` on unsigned types,
+        // the following contraption makes the tool happy
+        using X =
+            std::conditional_t<std::is_unsigned<TInput>::value, int, TInput>;
+        return std::is_unsigned<TInput>::value ? v
+                                               : std::abs(static_cast<X>(v));
+      }
       case kExpm1:
         return std::expm1(v);
       case kLog:
@@ -960,9 +971,12 @@ class SimpleIREvaluator : public CodeGen, public IRVisitor {
         return std::trunc(v);
       case kLgamma:
         return std::lgamma(v);
-      case kFrac:
-        TInput intpart;
+      case kFrac: {
+        using X =
+            std::conditional_t<std::is_integral<TInput>::value, float, TInput>;
+        X intpart;
         return std::modf(v, &intpart);
+      }
       case kIsNan:
         return std::isnan(v);
       default:
