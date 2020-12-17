@@ -210,11 +210,11 @@ class TestTypeHints(TestCase):
             (stdout, stderr, result) = mypy.api.run([
                 '--check-untyped-defs',
                 '--follow-imports', 'silent',
-            ])
+            ]) # type: ignore
         finally:
             os.chdir(cwd)
         if result != 0:
-            self.fail(f"mypy failed: {stdout} {stderr}")
+            self.fail(f"mypy failed: {stdout} {stderr}") # type: ignore
 
     @unittest.skipIf(not HAVE_MYPY, "need mypy")
     def test_run_mypy_strict(self):
