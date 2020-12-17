@@ -8,10 +8,12 @@
 #include <torch/csrc/jit/ir/ir.h>
 #include <torch/csrc/jit/ir/node_hashing.h>
 #include <torch/csrc/jit/jit_log.h>
+#include <torch/csrc/jit/jit_opt_bisect.h>
 #include <torch/csrc/jit/passes/dead_code_elimination.h>
 #include <torch/csrc/jit/runtime/operator.h>
 #include <torch/csrc/jit/runtime/vararg_functions.h>
 #include <torch/csrc/utils/memory.h>
+#include <string>
 
 namespace torch {
 namespace jit {
@@ -336,6 +338,12 @@ struct ConstantPropagator {
   }
 
   void ConstantPropagation(Node* n) {
+    auto allowed = JIT_BISECT();
+    if (!allowed) {
+      JIT_BISECT_LOG(
+          std::string("Stopped optimization at constant propagation"));
+      return;
+    }
     bool runnable_inputs = runnableInputs(n);
     if (n->kind() == prim::If) {
       // inline node if we can, otherwise check for simplified outputs
