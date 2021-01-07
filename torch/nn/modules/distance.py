@@ -43,10 +43,13 @@ class PairwiseDistance(Module):
 
 
 class CosineSimilarity(Module):
-    r"""Returns cosine similarity between :math:`x_1` and :math:`x_2`, computed along dim.
+    r"""Returns cosine similarity between :math:`X^1` and :math:`X^2`, computed along dim.
 
     .. math ::
-        \text{similarity} = \dfrac{x_1 \cdot x_2}{\max(\Vert x_1 \Vert _2 \cdot \Vert x_2 \Vert _2, \epsilon)}.
+        \begin{aligned}
+        X^1, X^2 & \in \mathbb{R}^{dim} \\
+        Y &= \dfrac{X^1 \ndot{dim} X^2}{\max(\nfun{norm}{dim}(X^1 ) \cdot \nfun{norm}{dim}(X^2) , \epsilon)}.
+        \end{aligned}
 
     Args:
         dim (int, optional): Dimension where cosine similarity is computed. Default: 1

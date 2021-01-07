@@ -16,9 +16,10 @@ class Embedding(Module):
     The input to the module is a list of indices, and the output is the corresponding
     word embeddings.
 
+
     Args:
-        num_embeddings (int): size of the dictionary of embeddings
-        embedding_dim (int): the size of each embedding vector
+        num_embeddings (int): :math:`V`, size of the dictionary of embeddings
+        embedding_dim (int): :math:`C`, the size of each embedding vector
         padding_idx (int, optional): If given, pads the output with the embedding vector at :attr:`padding_idx`
                                          (initialized to zeros) whenever it encounters the index.
         max_norm (float, optional): If given, each embedding vector with norm larger than :attr:`max_norm`

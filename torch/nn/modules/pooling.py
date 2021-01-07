@@ -35,12 +35,16 @@ class MaxPool1d(_MaxPoolNd):
     r"""Applies a 1D max pooling over an input signal composed of several input
     planes.
 
-    In the simplest case, the output value of the layer with input size :math:`(N, C, L)`
-    and output :math:`(N, C, L_{out})` can be precisely described as:
+    In the simplest case, with stride :math:`S` and kernel size :math:`K`,
+    Max Pool 1d can be precisely described as:
 
     .. math::
-        out(N_i, C_j, k) = \max_{m=0, \ldots, \text{kernel\_size} - 1}
-                input(N_i, C_j, stride \times k + m)
+
+       \begin{aligned}
+        X & \in \mathbb{R}^{\name{batch} \times \name{features} \times \nset{seq}{L}} \\
+        Y_{\nidx{seq}{k}} &= \max_{m=0, \ldots, \text{K} - 1} X_{\nidx{seq}{S \times k + m}}
+       \end{aligned}
+
 
     If :attr:`padding` is non-zero, then the input is implicitly padded with negative infinity on both sides
     for :attr:`padding` number of points. :attr:`dilation` is the stride between the elements within the
@@ -51,22 +55,22 @@ class MaxPool1d(_MaxPoolNd):
         or the input. Sliding windows that would start in the right padded region are ignored.
 
     Args:
-        kernel_size: The size of the sliding window, must be > 0.
-        stride: The stride of the sliding window, must be > 0. Default value is :attr:`kernel_size`.
-        padding: Implicit negative infinity padding to be added on both sides, must be >= 0 and <= kernel_size / 2.
-        dilation: The stride between elements within a sliding window, must be > 0.
+        kernel_size: :math:`K >0`, the size of the sliding window.
+        stride: :math:`S>0`, the stride of the sliding window. Default value is :math:`K`.
+        padding: :math:`0 <= P <= K / 2`, implicit negative infinity padding to be added on both sides.
+        dilation: :math:`D>0`, the stride between elements within a sliding window.
         return_indices: If ``True``, will return the argmax along with the max values.
                         Useful for :class:`torch.nn.MaxUnpool1d` later
         ceil_mode: If ``True``, will use `ceil` instead of `floor` to compute the output shape. This
                    ensures that every element in the input tensor is covered by a sliding window.
 
     Shape:
-        - Input: :math:`(N, C, L_{in})`
-        - Output: :math:`(N, C, L_{out})`, where
+        - Input: :math:`(\name{batch}, \name{features}, \nset{seq}{L})`
+        - Output: :math:`(\name{batch}, \name{features}, \nset{seq}{L_{out}})`, where
 
           .. math::
-              L_{out} = \left\lfloor \frac{L_{in} + 2 \times \text{padding} - \text{dilation}
-                    \times (\text{kernel\_size} - 1) - 1}{\text{stride}} + 1\right\rfloor
+              L_{out} = \left\lfloor \frac{L + 2 \times K - D
+                    \times (K - 1) - 1}{S} + 1\right\rfloor
 
     Examples::
 
@@ -475,14 +479,16 @@ class AvgPool1d(_AvgPoolNd):
     r"""Applies a 1D average pooling over an input signal composed of several
     input planes.
 
-    In the simplest case, the output value of the layer with input size :math:`(N, C, L)`,
-    output :math:`(N, C, L_{out})` and :attr:`kernel_size` :math:`k`
-    can be precisely described as:
-
+    In the simplest case,
+    
     .. math::
 
-        \text{out}(N_i, C_j, l) = \frac{1}{k} \sum_{m=0}^{k-1}
-                               \text{input}(N_i, C_j, \text{stride} \times l + m)
+       \begin{aligned}
+        X & \in \mathbb{R}^{\name{batch} \times \name{features} \times \nset{seq}{L}} \\
+        Y_{\nidx{seq}{s}} &= \frac{1}{\text{kernel\_size}} \sum_{k=1}^{\text{kernel\_size} } X_{\nidx{seq}{\text{stride} \times s + k - 1}}
+       \end{aligned}
+
+    
 
     If :attr:`padding` is non-zero, then the input is implicitly zero-padded on both sides
     for :attr:`padding` number of points.
@@ -857,11 +863,22 @@ class LPPool1d(_LPPoolNd):
     r"""Applies a 1D power-average pooling over an input signal composed of several input
     planes.
 
-    On each window, the function computed is:
+    .. math::
+
+       \begin{aligned}
+       X & \in \reals^{\name{batch} \times \nset{channels}{C_{in}} \times \nset{seq}{L_{in}}} \\
+       Y &= \sqrt[p]{ \nsum{kernel}{}  X^{p}} \\
+       \end{aligned}
+
+    where :math:`U` is the 1D unrolled tensor,
 
     .. math::
-        f(X) = \sqrt[p]{\sum_{x \in X} x^{p}}
+       \begin{aligned}
+       U &\in \reals^{\nset{seq}{L_{out}} \times \nset{kernel}{\text{kernel\_size}}}  \\
+       U_{\nidx{seq}{s},\nidx{kernel}{k}} &=  X_{\nidx{seq}{\text{stride} \times s + k}} \\
+       \end{aligned}
 
+    
     - At p = :math:`\infty`, one gets Max Pooling
     - At p = 1, one gets Sum Pooling (which is proportional to Average Pooling)
 

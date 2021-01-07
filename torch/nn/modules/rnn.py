@@ -347,16 +347,23 @@ class RNN(RNNBase):
     function:
 
     .. math::
-        h_t = \tanh(W_{ih} x_t + b_{ih} + W_{hh} h_{(t-1)} + b_{hh})
 
-    where :math:`h_t` is the hidden state at time `t`, :math:`x_t` is
-    the input at time `t`, and :math:`h_{(t-1)}` is the hidden state of the
-    previous layer at time `t-1` or the initial hidden state at time `0`.
-    If :attr:`nonlinearity` is ``'relu'``, then :math:`\text{ReLU}` is used instead of :math:`\tanh`.
+       \begin{aligned}
+       X^{t} &\in \mathbb{R}^{\nset{seq}{T} \times \name{batch} \times \nset{input}{I}} \\
+       H^{0} &\in \mathbb{R}^{\name{batch} \times \nset{hid}{C}} \\
+       H^{t} &\gets \tanh \left( W^{\text{i}} \ndot{input} X_{\nidx{seq}{t}} + b^{\text{i}} + W^{\text{h}} \ndot{hid'|hid} H^{t-1} + b^{\text{h}} \right) \\
+       \end{aligned}
+    
+        
+    where :math:`H^{(t)}` is the hidden state at time `t`, and :math:`H^{(t-1)}`
+    is the hidden state at time `t-1` or the initial
+    hidden state at time `0`.  If :attr:`nonlinearity` is ``'relu'``, then
+    :math:`\text{ReLU}` is used instead of :math:`\tanh`.
+
 
     Args:
-        input_size: The number of expected features in the input `x`
-        hidden_size: The number of features in the hidden state `h`
+        input_size: :math:`I`, the number of expected features in the input `x`.
+        hidden_size: :math:`C`, the number of features in the hidden state `h`.
         num_layers: Number of recurrent layers. E.g., setting ``num_layers=2``
             would mean stacking two RNNs together to form a `stacked RNN`,
             with the second RNN taking in outputs of the first RNN and
@@ -371,7 +378,7 @@ class RNN(RNNBase):
             :attr:`dropout`. Default: 0
         bidirectional: If ``True``, becomes a bidirectional RNN. Default: ``False``
 
-    Inputs: input, h_0
+    Inputs: input, :math:`H^{0}`
         - **input** of shape `(seq_len, batch, input_size)`: tensor containing the features
           of the input sequence. The input can also be a packed variable length
           sequence. See :func:`torch.nn.utils.rnn.pack_padded_sequence`
@@ -382,9 +389,9 @@ class RNN(RNNBase):
           Defaults to zero if not provided. If the RNN is bidirectional,
           num_directions should be 2, else it should be 1.
 
-    Outputs: output, h_n
+    Outputs: output, :math:`h^{T}`
         - **output** of shape `(seq_len, batch, num_directions * hidden_size)`: tensor
-          containing the output features (`h_t`) from the last layer of the RNN,
+          containing the output features (`H^{t}`) from the last layer of the RNN,
           for each `t`.  If a :class:`torch.nn.utils.rnn.PackedSequence` has
           been given as the input, the output will also be a packed sequence.
 
@@ -392,22 +399,22 @@ class RNN(RNNBase):
           using ``output.view(seq_len, batch, num_directions, hidden_size)``,
           with forward and backward being direction `0` and `1` respectively.
           Similarly, the directions can be separated in the packed case.
-        - **h_n** of shape `(num_layers * num_directions, batch, hidden_size)`: tensor
+        - **H^T** of shape `(num_layers * num_directions, batch, hidden_size)`: tensor
           containing the hidden state for `t = seq_len`.
 
           Like *output*, the layers can be separated using
           ``h_n.view(num_layers, num_directions, batch, hidden_size)``.
 
     Shape:
-        - Input1: :math:`(L, N, H_{in})` tensor containing input features where
-          :math:`H_{in}=\text{input\_size}` and `L` represents a sequence length.
-        - Input2: :math:`(S, N, H_{out})` tensor
+        - Input1: :math:`(T, N, I)` tensor containing input features where
+          :math:`I=\text{input\_size}` and `T` represents a sequence length.
+        - Input2: :math:`(S, N, C)` tensor
           containing the initial hidden state for each element in the batch.
-          :math:`H_{out}=\text{hidden\_size}`
+          :math:`C=\text{hidden\_size}`
           Defaults to zero if not provided. where :math:`S=\text{num\_layers} * \text{num\_directions}`
           If the RNN is bidirectional, num_directions should be 2, else it should be 1.
-        - Output1: :math:`(L, N, H_{all})` where :math:`H_{all}=\text{num\_directions} * \text{hidden\_size}`
-        - Output2: :math:`(S, N, H_{out})` tensor containing the next hidden state
+        - Output1: :math:`(T, N, C_{all})` where :math:`H_{all}=\text{num\_directions} * \text{hidden\_size}`
+        - Output2: :math:`(S, N, C)` tensor containing the next hidden state
           for each element in the batch
 
     Attributes:

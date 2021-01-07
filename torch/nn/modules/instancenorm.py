@@ -67,13 +67,18 @@ class InstanceNorm1d(_InstanceNorm):
 
     .. math::
 
-        y = \frac{x - \mathrm{E}[x]}{ \sqrt{\mathrm{Var}[x] + \epsilon}} * \gamma + \beta
+       \begin{aligned}
+       X & \in \mathbb{R}^{\name{batch} \times \nset{features}{C} \times \name{seq}} \\
+       \gamma, \beta &\in \mathbb{R}^{\nset{features}{C}}  \\
+        Y &= \frac{X - \nfun{seq}{mean}(X)}{\sqrt{\nfun{seq}{var}(X) + \epsilon}} \odot \gamma + \beta
+       \end{aligned}
 
-    The mean and standard-deviation are calculated per-dimension separately
-    for each object in a mini-batch. :math:`\gamma` and :math:`\beta` are learnable parameter vectors
-    of size `C` (where `C` is the input size) if :attr:`affine` is ``True``.
-    The standard-deviation is calculated via the biased estimator, equivalent to
-    `torch.var(input, unbiased=False)`.
+
+    The mean and standard-deviation are calculated per-dimension separately for
+    each object in a mini-batch. :math:`\gamma` and :math:`\beta` are learnable
+    parameter vectors of size `C` (where `C` is the feature size) if
+    :attr:`affine` is ``True``.  The standard-deviation is calculated via the
+    biased estimator, equivalent to `torch.var(input, unbiased=False)`.
 
     By default, this layer uses instance statistics computed from input data in
     both training and evaluation modes.
@@ -101,8 +106,7 @@ class InstanceNorm1d(_InstanceNorm):
         transform.
 
     Args:
-        num_features: :math:`C` from an expected input of size
-            :math:`(N, C, L)` or :math:`L` from input of size :math:`(N, L)`
+        num_features: :math:`C` the expected size of the features dim.
         eps: a value added to the denominator for numerical stability. Default: 1e-5
         momentum: the value used for the running_mean and running_var computation. Default: 0.1
         affine: a boolean value that when set to ``True``, this module has
@@ -114,8 +118,8 @@ class InstanceNorm1d(_InstanceNorm):
             statistics in both training and eval modes. Default: ``False``
 
     Shape:
-        - Input: :math:`(N, C, L)`
-        - Output: :math:`(N, C, L)` (same shape as input)
+        - Input: :math:`(\nset{batch}{N}, \nset{features}{C}, \nset{seq}{L})`
+        - Output: :math:`(\nset{batch}{N}, \nset{features}{C}, \nset{seq}{L})` (same shape as input)
 
     Examples::
 
