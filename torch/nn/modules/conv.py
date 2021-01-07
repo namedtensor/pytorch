@@ -142,18 +142,28 @@ class Conv1d(_ConvNd):
     __doc__ = r"""Applies a 1D convolution over an input signal composed of several input
     planes.
 
-    In the simplest case, the output value of the layer with input size
-    :math:`(N, C_{\text{in}}, L)` and output :math:`(N, C_{\text{out}}, L_{\text{out}})` can be
-    precisely described as:
+    In the simplest case, with stride :math:`S` and kernel size :math:`K`,
 
     .. math::
-        \text{out}(N_i, C_{\text{out}_j}) = \text{bias}(C_{\text{out}_j}) +
-        \sum_{k = 0}^{C_{in} - 1} \text{weight}(C_{\text{out}_j}, k)
-        \star \text{input}(N_i, k)
 
-    where :math:`\star` is the valid `cross-correlation`_ operator,
-    :math:`N` is a batch size, :math:`C` denotes a number of channels,
-    :math:`L` is a length of signal sequence.
+       \begin{aligned}
+       X & \in \reals^{\name{batch} \times \nset{channels}{C_{in}} \times \nset{seq}{L}} \\
+       Y &= W \ndot{channels,kernel} U + b \\
+       \end{aligned}
+
+    where
+
+    .. math::
+       \begin{aligned}
+       U &\in \reals^{\nset{out}{L_{out}} \times \nset{kernel}{K}}  \\
+       U_{\nidx{out}{o},\nidx{kernel}{m}} &=  X_{\nidx{seq}{S \times o + m}} \\
+       \end{aligned}
+
+    .. math::
+       \begin{aligned}
+       W &\in \reals^{\nset{out\_channels}{C_{out}} \times \nset{channels}{C_{in}} \times \nset{kernel}{K}} \\
+       b &\in \reals^{\nset{out\_channels}{C_{out}}} \\
+       \end{aligned}
     """ + r"""
 
     This module supports :ref:`TensorFloat32<tf32_on_ampere>`.

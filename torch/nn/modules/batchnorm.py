@@ -147,14 +147,19 @@ class BatchNorm1d(_BatchNorm):
     Internal Covariate Shift <https://arxiv.org/abs/1502.03167>`__ .
 
     .. math::
-
-        y = \frac{x - \mathrm{E}[x]}{\sqrt{\mathrm{Var}[x] + \epsilon}} * \gamma + \beta
-
-    The mean and standard-deviation are calculated per-dimension over
-    the mini-batches and :math:`\gamma` and :math:`\beta` are learnable parameter vectors
-    of size `C` (where `C` is the input size). By default, the elements of :math:`\gamma` are set
-    to 1 and the elements of :math:`\beta` are set to 0. The standard-deviation is calculated
-    via the biased estimator, equivalent to `torch.var(input, unbiased=False)`.
+       
+       \begin{aligned}
+       X & \in \mathbb{R}^{\name{batch} \times \nset{features}{C} \times \name{seq}} \\
+       \gamma, \beta & \in \mathbb{R}^{\nset{features}{C}}  \\
+        Y &= \frac{X - \nfun{batch,seq}{mean}(X)}{\sqrt{\nfun{batch,seq}{var}(X) + \epsilon}} \odot \gamma + \beta
+       \end{aligned}
+       
+    The mean and standard-deviation are calculated per-dimension over the
+    mini-batches and :math:`\gamma` and :math:`\beta` are learnable parameter
+    vectors of size `C` (where `C` is the number of features). By default, the
+    elements of :math:`\gamma` are set to 1 and the elements of :math:`\beta`
+    are set to 0. The standard-deviation is calculated via the biased estimator,
+    equivalent to `torch.var(input, unbiased=False)`.
 
     Also by default, during training this layer keeps running estimates of its
     computed mean and variance, which are then used for normalization during
@@ -173,12 +178,11 @@ class BatchNorm1d(_BatchNorm):
         where :math:`\hat{x}` is the estimated statistic and :math:`x_t` is the
         new observed value.
 
-    Because the Batch Normalization is done over the `C` dimension, computing statistics
-    on `(N, L)` slices, it's common terminology to call this Temporal Batch Normalization.
+    Because Batch Norm 1d computes statistics over the sequence and batch
+    dimensions, it is commonly known as Temporal Batch Normalization.
 
     Args:
-        num_features: :math:`C` from an expected input of size
-            :math:`(N, C, L)` or :math:`L` from input of size :math:`(N, L)`
+        num_features: :math:`C`, the expected size of the features dim.
         eps: a value added to the denominator for numerical stability.
             Default: 1e-5
         momentum: the value used for the running_mean and running_var
@@ -194,8 +198,11 @@ class BatchNorm1d(_BatchNorm):
             in both training and eval modes. Default: ``True``
 
     Shape:
-        - Input: :math:`(N, C)` or :math:`(N, C, L)`
-        - Output: :math:`(N, C)` or :math:`(N, C, L)` (same shape as input)
+        - Input: :math:`(\name{batch}, \name{features})` or
+          :math:`(\name{batch}, \nset{features}{C}, \name{seq})`
+        - Output: :math:`(\name{batch}, \name{features})` or
+          :math:`(\name{batch}, \nset{features}{C}, \name{seq})` (same
+          shape as input)
 
     Examples::
 
@@ -219,15 +226,21 @@ class BatchNorm2d(_BatchNorm):
     `Batch Normalization: Accelerating Deep Network Training by Reducing
     Internal Covariate Shift <https://arxiv.org/abs/1502.03167>`__ .
 
+
     .. math::
 
-        y = \frac{x - \mathrm{E}[x]}{ \sqrt{\mathrm{Var}[x] + \epsilon}} * \gamma + \beta
+       \begin{aligned}
+       X & \in \mathbb{R}^{\name{batch} \times \nset{features}{C} \times \name{height} \times \name{width}} \ \ 
+       \gamma, \beta &\in \mathbb{R}^{\nset{features}{C}}  \\
+        Y &= \frac{X - \nfun{batch,height,width}{mean}(X)}{\sqrt{\nfun{batch}{batch,height,width}(X) + \epsilon}} \odot \gamma + \beta
+       \end{aligned}
 
-    The mean and standard-deviation are calculated per-dimension over
-    the mini-batches and :math:`\gamma` and :math:`\beta` are learnable parameter vectors
-    of size `C` (where `C` is the input size). By default, the elements of :math:`\gamma` are set
-    to 1 and the elements of :math:`\beta` are set to 0. The standard-deviation is calculated
-    via the biased estimator, equivalent to `torch.var(input, unbiased=False)`.
+    The mean and standard-deviation are calculated per-dimension over the
+    mini-batches and :math:`\gamma` and :math:`\beta` are learnable parameter
+    vectors of size `C` (where `C` is the number of features). By default, the
+    elements of :math:`\gamma` are set to 1 and the elements of :math:`\beta`
+    are set to 0. The standard-deviation is calculated via the biased estimator,
+    equivalent to `torch.var(input, unbiased=False)`.
 
     Also by default, during training this layer keeps running estimates of its
     computed mean and variance, which are then used for normalization during
@@ -245,13 +258,13 @@ class BatchNorm2d(_BatchNorm):
         :math:`\hat{x}_\text{new} = (1 - \text{momentum}) \times \hat{x} + \text{momentum} \times x_t`,
         where :math:`\hat{x}` is the estimated statistic and :math:`x_t` is the
         new observed value.
+        
+    Because Batch Norm 2d computes statistics over the height, width, and batch
+    dimensions, it is commonly known as Spatial Batch Normalization.
 
-    Because the Batch Normalization is done over the `C` dimension, computing statistics
-    on `(N, H, W)` slices, it's common terminology to call this Spatial Batch Normalization.
 
     Args:
-        num_features: :math:`C` from an expected input of size
-            :math:`(N, C, H, W)`
+        num_features: :math:`C`, the expected size of the features dim.
         eps: a value added to the denominator for numerical stability.
             Default: 1e-5
         momentum: the value used for the running_mean and running_var
@@ -267,8 +280,8 @@ class BatchNorm2d(_BatchNorm):
             in both training and eval modes. Default: ``True``
 
     Shape:
-        - Input: :math:`(N, C, H, W)`
-        - Output: :math:`(N, C, H, W)` (same shape as input)
+        - Input: :math:`(\nset{batch}{N}, \nset{features}{C}, \nset{height}{H}, \nset{width}{W})`
+        - Output: :math:`(\nset{batch}{N}, \nset{features}{C}, \nset{height}{H}, \nset{width}{W})` (same shape as input)
 
     Examples::
 
@@ -294,13 +307,18 @@ class BatchNorm3d(_BatchNorm):
 
     .. math::
 
-        y = \frac{x - \mathrm{E}[x]}{ \sqrt{\mathrm{Var}[x] + \epsilon}} * \gamma + \beta
+       \begin{aligned}
+       X & \in \mathbb{R}^{\nset{batch} \times \nset{features} \times \nset{depth} \times \nset{height} \times \nset{width}} \\
+       \gamma, \beta &\in \mathbb{R}^{\nset{features}{C}}  \\
+        Y &= \frac{X - \nfun{batch,height,width,depth}{mean}(X)}{\sqrt{\nfun{batch}{batch,height,width,depth}(X) + \epsilon}} \odot \gamma + \beta
+       \end{aligned}
 
-    The mean and standard-deviation are calculated per-dimension over
-    the mini-batches and :math:`\gamma` and :math:`\beta` are learnable parameter vectors
-    of size `C` (where `C` is the input size). By default, the elements of :math:`\gamma` are set
-    to 1 and the elements of :math:`\beta` are set to 0. The standard-deviation is calculated
-    via the biased estimator, equivalent to `torch.var(input, unbiased=False)`.
+    The mean and standard-deviation are calculated per-dimension over the
+    mini-batches and :math:`\gamma` and :math:`\beta` are learnable parameter
+    vectors of size `C` (where `C` is the number of features). By default, the
+    elements of :math:`\gamma` are set to 1 and the elements of :math:`\beta`
+    are set to 0. The standard-deviation is calculated via the biased estimator,
+    equivalent to `torch.var(input, unbiased=False)`.
 
     Also by default, during training this layer keeps running estimates of its
     computed mean and variance, which are then used for normalization during
@@ -319,13 +337,12 @@ class BatchNorm3d(_BatchNorm):
         where :math:`\hat{x}` is the estimated statistic and :math:`x_t` is the
         new observed value.
 
-    Because the Batch Normalization is done over the `C` dimension, computing statistics
-    on `(N, D, H, W)` slices, it's common terminology to call this Volumetric Batch Normalization
+    Because Batch Norm 1d computes statistics over the height, width, depth, and batch
+    dimensions, it is commonly known as Volumetric Batch Normalization
     or Spatio-temporal Batch Normalization.
 
     Args:
-        num_features: :math:`C` from an expected input of size
-            :math:`(N, C, D, H, W)`
+        num_features: :math:`C`, the expected size of the features dim.
         eps: a value added to the denominator for numerical stability.
             Default: 1e-5
         momentum: the value used for the running_mean and running_var
@@ -341,8 +358,8 @@ class BatchNorm3d(_BatchNorm):
             in both training and eval modes. Default: ``True``
 
     Shape:
-        - Input: :math:`(N, C, D, H, W)`
-        - Output: :math:`(N, C, D, H, W)` (same shape as input)
+        - Input: :math:`(\nset{batch}{N}, \nset{features}{C}, \nset{depth}{D}, \nset{height}{H}, \nset{width}{W})`
+        - Output: :math:`(\nset{batch}{N}, \nset{features}{C}, \nset{depth}{D}, \nset{height}{H}, \nset{width}{W})` (same shape as input)
 
     Examples::
 

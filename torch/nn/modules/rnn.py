@@ -343,20 +343,46 @@ class RNN(RNNBase):
     input sequence.
 
 
+
     For each element in the input sequence, each layer computes the following
     function:
 
     .. math::
-        h_t = \tanh(W_{ih} x_t + b_{ih} + W_{hh} h_{(t-1)} + b_{hh})
 
-    where :math:`h_t` is the hidden state at time `t`, :math:`x_t` is
-    the input at time `t`, and :math:`h_{(t-1)}` is the hidden state of the
-    previous layer at time `t-1` or the initial hidden state at time `0`.
-    If :attr:`nonlinearity` is ``'relu'``, then :math:`\text{ReLU}` is used instead of :math:`\tanh`.
+       \begin{aligned}
+       X^{t} &\in \mathbb{R}^{\nset{seq}{T} \times \name{batch} \times \nset{input}{I}} \\
+       H^{0} &\in \mathbb{R}^{\name{batch} \times \nset{hid}{C}} \\
+       H^{t} &\gets \tanh \left( W^{\text{h}} \ndot{hid'|hid} H^{t-1} + b^{\text{h},l} + W^{\text{i}} \ndot{input} X_{\nidx{seq}{t}} + b^{\text{i}} \right) \\
+       \end{aligned}
+    
+    For each element in the input sequence, each layer computes the following
+    function:
+
+    .. math::
+
+       \begin{aligned}
+       X^{t} &\in \mathbb{R}^{\nset{seq}{T} \times \name{batch} \times \nset{input}{I}} \\
+       H^{0} &\in \mathbb{R}^{\nset{layers}{L} \times \name{batch} \times \nset{hid}{C}} \\
+       H^{t}_{\nidx{layers}{1}} &\gets \tanh \left( W^{\text{h},l} \ndot{hid'|hid} H^{t-1}_{\nidx{layers}{1}} + b^{\text{h},l} + W^{\text{i},l} \ndot{input} X_{\nidx{seq}{t}} + b^{\text{i},l} \right) \\
+       H^{t}_{\nidx{layers}{l>1}} &\gets \tanh \left( W^{\text{h},l} \ndot{hid'|hid} H^{t-1}_{\nidx{layers}{l}} + b^{\text{h},l} + W^{\text{i},l} \ndot{hid'|hid} H^{t}_{\nidx{layers}{l-1},\nidx{seq}{t}} + b^{\text{i},l} \right) \\
+       \end{aligned}
+        
+    where :math:`H^{(t)}` is the hidden state at time `t`, and :math:`H^{(t-1)}`
+    is the hidden state at time `t-1` or the initial
+    hidden state at time `0`.  If :attr:`nonlinearity` is ``'relu'``, then
+    :math:`\text{ReLU}` is used instead of :math:`\tanh`. The parameters are for each layer :math:`l`  
+
+    .. math::
+
+       \begin{aligned}
+        W^{\text{h},l} &\in \mathbb{R}^{\nset{hid}{C} \times \nset{hid'}{C}}&  b^{\text{h},l} &\in \mathbb{R}^{\nset{hid}{C}} \\
+        W^{\text{i},l} &\in \mathbb{R}^{\nset{input}{I} \times \nset{hid}{C}}& b^{\text{i},l} &\in \mathbb{R}^{\nset{hid}{C}} \\
+        & \text{except\ } W^{\text{i}, 1} &\in \mathbb{R}^{\nset{input}{I} \times \nset{hid}{C}} &
+        \end{aligned}
 
     Args:
-        input_size: The number of expected features in the input `x`
-        hidden_size: The number of features in the hidden state `h`
+        input_size: :math:`I`, the number of expected features in the input `x`.
+        hidden_size: :math:`C`, the number of features in the hidden state `h`.
         num_layers: Number of recurrent layers. E.g., setting ``num_layers=2``
             would mean stacking two RNNs together to form a `stacked RNN`,
             with the second RNN taking in outputs of the first RNN and
@@ -371,7 +397,7 @@ class RNN(RNNBase):
             :attr:`dropout`. Default: 0
         bidirectional: If ``True``, becomes a bidirectional RNN. Default: ``False``
 
-    Inputs: input, h_0
+    Inputs: input, H^{(0)}
         - **input** of shape `(seq_len, batch, input_size)`: tensor containing the features
           of the input sequence. The input can also be a packed variable length
           sequence. See :func:`torch.nn.utils.rnn.pack_padded_sequence`

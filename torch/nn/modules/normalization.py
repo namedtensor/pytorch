@@ -50,7 +50,7 @@ class LocalResponseNorm(Module):
         self.alpha = alpha
         self.beta = beta
         self.k = k
-
+        
     def forward(self, input: Tensor) -> Tensor:
         return F.local_response_norm(input, self.size, self.alpha, self.beta,
                                      self.k)
@@ -88,7 +88,11 @@ class LayerNorm(Module):
     the paper `Layer Normalization <https://arxiv.org/abs/1607.06450>`__
 
     .. math::
-        y = \frac{x - \mathrm{E}[x]}{ \sqrt{\mathrm{Var}[x] + \epsilon}} * \gamma + \beta
+
+       \begin{aligned}
+       \gamma, \beta &\in \mathbb{R}^{\nset{layer}}  \\
+        Y &= \frac{X - \nfun{layer}{mean}(X)}{\sqrt{\nfun{layer}{var}(X) + \epsilon}} \odot \gamma + \beta
+       \end{aligned}
 
     The mean and standard-deviation are calculated separately over the last
     certain number dimensions which have to be of the shape specified by
@@ -123,8 +127,8 @@ class LayerNorm(Module):
             and zeros (for biases). Default: ``True``.
 
     Shape:
-        - Input: :math:`(N, *)`
-        - Output: :math:`(N, *)` (same shape as input)
+        - Input: :math:`(\nset{batch}{N}, \nset{layer}{*})`
+        - Output: :math:`(\nset{batch}{N}, \nset{layer}{*})` (same shape as input)
 
     Examples::
 
@@ -179,7 +183,23 @@ class GroupNorm(Module):
     the paper `Group Normalization <https://arxiv.org/abs/1803.08494>`__
 
     .. math::
-        y = \frac{x - \mathrm{E}[x]}{ \sqrt{\mathrm{Var}[x] + \epsilon}} * \gamma + \beta
+       
+       \begin{aligned}
+       X &\in \mathbb{R}^{\name{batch} \times \nset{channels}{C} \times \name{layer}}  \\
+       \gamma, \beta &\in \mathbb{R}^{\nset{channels}{C}}  \\
+       Y &= \frac{U - \nfun{channels',layer}{mean}(U)}{\sqrt{\nfun{channels',layer}{var}(U) + \epsilon}}  \ndot{channels', groups} M \odot \gamma + \beta \\
+       U &= M \ndot{channels} X \\
+       \end{aligned}
+       
+    where :math:`M` is a grouping map.
+    
+    .. math::
+       
+       \begin{aligned}
+       M &\in \mathbb{R}^{\nset{channels}{C} \times\nset{groups}{G} \times \nset{channels'}{C / G}}  \\
+       M_{\nidx{channels}{c}, \nidx{groups}{g}, \nidx{channels'}{c'}, } & = \delta(Cg + c', c)\\ 
+       \end{aligned}
+
 
     The input channels are separated into :attr:`num_groups` groups, each containing
     ``num_channels / num_groups`` channels. The mean and standard-deviation are calculated
@@ -193,16 +213,16 @@ class GroupNorm(Module):
     evaluation modes.
 
     Args:
-        num_groups (int): number of groups to separate the channels into
-        num_channels (int): number of channels expected in input
+        num_groups (int): :math:`G`, number of groups to separate the channels into
+        num_channels (int): :math:`C`, number of channels expected in input
         eps: a value added to the denominator for numerical stability. Default: 1e-5
         affine: a boolean value that when set to ``True``, this module
             has learnable per-channel affine parameters initialized to ones (for weights)
             and zeros (for biases). Default: ``True``.
 
     Shape:
-        - Input: :math:`(N, C, *)` where :math:`C=\text{num\_channels}`
-        - Output: :math:`(N, C, *)` (same shape as input)
+        - Input: :math:`(\name{batch}, \nset{channels}{C}, *)` 
+        - Output: :math:`(\name{batch}, \nset{channels}{C}, *)` (same shape as input)
 
     Examples::
 

@@ -33,6 +33,7 @@ except ImportError:
 RELEASE = os.environ.get('RELEASE', False)
 
 import pytorch_sphinx_theme
+import sphinxcontrib.katex as katex
 
 # -- General configuration ------------------------------------------------
 
@@ -69,7 +70,26 @@ autosectionlabel_prefix_document = True
 #
 #
 
-katex_prerender = True
+katex_prerender = False
+
+latex_macros = r"""
+    \def \name #1{\mathsf{#1}}
+    \def \nidx #1#2{\name{#1}(#2)}
+    \def \nset #1#2{\name{#1}[#2]}
+    \def \nbin #1#2{\mathbin{\underset{\name{#1}}{#2}}}
+    \def \ndot #1{\nbin{#1}{\odot}}
+    \def \ncat #1{\nbin{#1}{\oplus}}
+    \def \nsum #1{\sum_{\name{#1}}}
+    \def \nfun #1#2{\mathop{\underset{\name{#1}}{\mathrm{#2}}}}
+    \def \nmov #1#2{\name{#1}\rightarrow\name{#2}}
+"""
+
+# Translate LaTeX macros to KaTeX and add to options for HTML builder
+katex_macros = katex.latex_defs_to_katex_macros(latex_macros)
+katex_options = 'macros: {' + katex_macros + '}'
+
+# Add LaTeX macros for LATEX builder
+latex_elements = {'preamble': latex_macros}
 
 napoleon_use_ivar = True
 
@@ -297,7 +317,7 @@ htmlhelp_basename = 'PyTorchdoc'
 
 # -- Options for LaTeX output ---------------------------------------------
 
-latex_elements = {
+# latex_elements = {
     # The paper size ('letterpaper' or 'a4paper').
     #
     # 'papersize': 'letterpaper',
@@ -313,7 +333,7 @@ latex_elements = {
     # Latex figure (float) alignment
     #
     # 'figure_align': 'htbp',
-}
+# }
 
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title,
