@@ -1106,7 +1106,10 @@ class Softmin(Module):
     Softmin is defined as:
 
     .. math::
-        \text{Softmin}(x_{i}) = \frac{\exp(-x_i)}{\sum_j \exp(-x_j)}
+        \begin{aligned}
+        X &\in \mathbb{R}^{\name{dim}}
+        Y &= \frac{\exp(-X)}{\nsum{dim} \exp(-X)}
+        \end{aligned}
 
     Shape:
         - Input: :math:`(*)` where `*` means, any number of additional
@@ -1152,8 +1155,12 @@ class Softmax(Module):
 
     Softmax is defined as:
 
+
     .. math::
-        \text{Softmax}(x_{i}) = \frac{\exp(x_i)}{\sum_j \exp(x_j)}
+        \begin{aligned}
+        X &\in \mathbb{R}^{\name{dim}} \\
+        Y &= \frac{\exp(X)}{\nsum{dim} \exp(X)}
+       \end{aligned}
 
     When the input Tensor is a sparse tensor then the unspecifed
     values are treated as ``-inf``.
@@ -1234,7 +1241,12 @@ class LogSoftmax(Module):
     input Tensor. The LogSoftmax formulation can be simplified as:
 
     .. math::
-        \text{LogSoftmax}(x_{i}) = \log\left(\frac{\exp(x_i) }{ \sum_j \exp(x_j)} \right)
+        \begin{aligned}
+        X &\in \mathbb{R}^{\name{dim}} \\ 
+        Y &= \log \left( \frac{\exp(X)}{\nsum{dim} \exp(X)} \right)
+       \end{aligned}
+
+
 
     Shape:
         - Input: :math:`(*)` where `*` means, any number of additional

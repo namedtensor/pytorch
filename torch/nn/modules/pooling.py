@@ -479,14 +479,16 @@ class AvgPool1d(_AvgPoolNd):
     r"""Applies a 1D average pooling over an input signal composed of several
     input planes.
 
-    In the simplest case, the output value of the layer with input size :math:`(N, C, L)`,
-    output :math:`(N, C, L_{out})` and :attr:`kernel_size` :math:`k`
-    can be precisely described as:
-
+    In the simplest case,
+    
     .. math::
 
-        \text{out}(N_i, C_j, l) = \frac{1}{k} \sum_{m=0}^{k-1}
-                               \text{input}(N_i, C_j, \text{stride} \times l + m)
+       \begin{aligned}
+        X & \in \mathbb{R}^{\name{batch} \times \name{features} \times \nset{seq}{L}} \\
+        Y_{\nidx{seq}{s}} &= \frac{1}{\text{kernel\_size}} \sum_{k=1}^{\text{kernel\_size} } X_{\nidx{seq}{\text{stride} \times s + k - 1}}
+       \end{aligned}
+
+    
 
     If :attr:`padding` is non-zero, then the input is implicitly zero-padded on both sides
     for :attr:`padding` number of points.
@@ -861,11 +863,22 @@ class LPPool1d(_LPPoolNd):
     r"""Applies a 1D power-average pooling over an input signal composed of several input
     planes.
 
-    On each window, the function computed is:
+    .. math::
+
+       \begin{aligned}
+       X & \in \reals^{\name{batch} \times \nset{channels}{C_{in}} \times \nset{seq}{L_{in}}} \\
+       Y &= \sqrt[p]{ \nsum{kernel}{}  X^{p}} \\
+       \end{aligned}
+
+    where :math:`U` is the 1D unrolled tensor,
 
     .. math::
-        f(X) = \sqrt[p]{\sum_{x \in X} x^{p}}
+       \begin{aligned}
+       U &\in \reals^{\nset{seq}{L_{out}} \times \nset{kernel}{\text{kernel\_size}}}  \\
+       U_{\nidx{seq}{s},\nidx{kernel}{k}} &=  X_{\nidx{seq}{\text{stride} \times s + k}} \\
+       \end{aligned}
 
+    
     - At p = :math:`\infty`, one gets Max Pooling
     - At p = 1, one gets Sum Pooling (which is proportional to Average Pooling)
 

@@ -32,7 +32,7 @@ convolution_notes = \
         "depthwise_separable_note": r"""When `groups == in_channels` and `out_channels == K * in_channels`,
         where `K` is a positive integer, this operation is also known as a "depthwise convolution".
 
-        In other words, for an input of size :math:`(N, C_{in}, L_{in})`,
+        In other words, for an input with channels and sequence length :math:`(C_{in}, L_{in})`,
         a depthwise convolution with a depthwise multiplier `K` can be performed with the arguments
         :math:`(C_\text{in}=C_\text{in}, C_\text{out}=C_\text{in} \times \text{K}, ..., \text{groups}=C_\text{in})`."""}  # noqa: B950
 
@@ -142,28 +142,23 @@ class Conv1d(_ConvNd):
     __doc__ = r"""Applies a 1D convolution over an input signal composed of several input
     planes.
 
-    In the simplest case, with stride :math:`S` and kernel size :math:`K`,
+    In the simplest case, 
 
     .. math::
 
        \begin{aligned}
-       X & \in \reals^{\name{batch} \times \nset{channels}{C_{in}} \times \nset{seq}{L}} \\
+       X & \in \reals^{\name{batch} \times \nset{channels}{C_{in}} \times \nset{seq}{L_{in}}} \\
        Y &= W \ndot{channels,kernel} U + b \\
        \end{aligned}
 
-    where
+    where :math:`U` is the 1D unrolled tensor,
 
     .. math::
        \begin{aligned}
-       U &\in \reals^{\nset{out}{L_{out}} \times \nset{kernel}{K}}  \\
-       U_{\nidx{out}{o},\nidx{kernel}{m}} &=  X_{\nidx{seq}{S \times o + m}} \\
+       U &\in \reals^{\nset{seq}{L_{out}} \times \nset{kernel}{\text{kernel\_size}}}  \\
+       U_{\nidx{seq}{s},\nidx{kernel}{k}} &=  X_{\nidx{seq}{\text{stride} \times s + k}} \\
        \end{aligned}
 
-    .. math::
-       \begin{aligned}
-       W &\in \reals^{\nset{out\_channels}{C_{out}} \times \nset{channels}{C_{in}} \times \nset{kernel}{K}} \\
-       b &\in \reals^{\nset{out\_channels}{C_{out}}} \\
-       \end{aligned}
     """ + r"""
 
     This module supports :ref:`TensorFloat32<tf32_on_ampere>`.
@@ -204,8 +199,8 @@ class Conv1d(_ConvNd):
     """.format(**reproducibility_notes, **convolution_notes) + r"""
 
     Shape:
-        - Input: :math:`(N, C_{in}, L_{in})`
-        - Output: :math:`(N, C_{out}, L_{out})` where
+        - Input: :math:`(\name{batch}, \nset{channels}{C_{in}}, \nset{seq}{L_{in}})`
+        - Output: :math:`(\name{batch}, \nset{out\_channels}{C_{out}},  \nset{seq}{L_{out}})` where
 
           .. math::
               L_{out} = \left\lfloor\frac{L_{in} + 2 \times \text{padding} - \text{dilation}
@@ -217,11 +212,11 @@ class Conv1d(_ConvNd):
             \frac{\text{in\_channels}}{\text{groups}}, \text{kernel\_size})`.
             The values of these weights are sampled from
             :math:`\mathcal{U}(-\sqrt{k}, \sqrt{k})` where
-            :math:`k = \frac{groups}{C_\text{in} * \text{kernel\_size}}`
+            :math:`k = \frac{\text{groups}}{C_\text{in} * \text{kernel\_size}}`
         bias (Tensor):   the learnable bias of the module of shape
             (out_channels). If :attr:`bias` is ``True``, then the values of these weights are
             sampled from :math:`\mathcal{U}(-\sqrt{k}, \sqrt{k})` where
-            :math:`k = \frac{groups}{C_\text{in} * \text{kernel\_size}}`
+            :math:`k = \frac{\text{groups}}{C_\text{in} * \text{kernel\_size}}`
 
     Examples::
 
@@ -272,19 +267,23 @@ class Conv2d(_ConvNd):
     __doc__ = r"""Applies a 2D convolution over an input signal composed of several input
     planes.
 
-    In the simplest case, the output value of the layer with input size
-    :math:`(N, C_{\text{in}}, H, W)` and output :math:`(N, C_{\text{out}}, H_{\text{out}}, W_{\text{out}})`
-    can be precisely described as:
+    In the simplest case,
 
     .. math::
-        \text{out}(N_i, C_{\text{out}_j}) = \text{bias}(C_{\text{out}_j}) +
-        \sum_{k = 0}^{C_{\text{in}} - 1} \text{weight}(C_{\text{out}_j}, k) \star \text{input}(N_i, k)
 
+       \begin{aligned}
+       X & \in \reals^{\name{batch} \times \nset{channels}{C_{in}} \times \nset{height}{H} \times \nset{width}{W}} \\
+       Y &= W \ndot{channels,kh,kw} U + b \\
+       \end{aligned}
 
-    where :math:`\star` is the valid 2D `cross-correlation`_ operator,
-    :math:`N` is a batch size, :math:`C` denotes a number of channels,
-    :math:`H` is a height of input planes in pixels, and :math:`W` is
-    width in pixels.
+    where :math:`U` is the 2D unrolled tensor,
+
+    .. math::
+       \begin{aligned}
+       U &\in \reals^{\nset{height}{H_{out}} \times \nset{width}{W_{out}} \times \nset{kh}{\text{kernel\_size[0]}} \times \nset{kw}{\text{kernel\_size[1]}}}  \\
+       U_{\nidx{height}{h}, \nidx{width}{w}, \nidx{kh}{kh}, \nidx{kw}{kw}} &=  X_{\nidx{height}{\text{stride[0]} \times h + kh}, \nidx{width}{\text{stride[1]} \times w + kw}} \\
+       \end{aligned}
+
     """ + r"""
 
     This module supports :ref:`TensorFloat32<tf32_on_ampere>`.
